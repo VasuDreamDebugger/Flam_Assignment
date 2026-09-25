@@ -2,12 +2,17 @@
  * StopCard.jsx — Renders a single itinerary stop.
  *
  * Props:
- *   stop {import('../types/result').Stop} — Stop data from the backend
+ *   stop        {import('../types/result').Stop} — Stop data from the backend
+ *   isFirst     {boolean}   — True if this is the first stop in the day
+ *   isLast      {boolean}   — True if this is the last stop in the day
+ *   onMoveUp    {() => void} — Move this stop one position earlier
+ *   onMoveDown  {() => void} — Move this stop one position later
+ *   onRemove    {() => void} — Remove this stop from the day
  *
  * Responsibilities:
  *   - Display name, type badge, description, duration, best time
- *   - Convert durationMinutes to a human-readable string
- *   - Does NOT modify the stored value (durationMinutes remains a number)
+ *   - Convert durationMinutes to a human-readable string (does NOT mutate stored value)
+ *   - Render ↑ / ↓ / Remove action buttons
  */
 
 // ---------------------------------------------------------------------------
@@ -16,13 +21,6 @@
 
 /**
  * Converts an integer number of minutes to a human-readable string.
- *
- * Examples:
- *   90  → "1h 30m"
- *   60  → "1h"
- *   45  → "45m"
- *   150 → "2h 30m"
- *
  * @param {number} minutes
  * @returns {string}
  */
@@ -37,7 +35,6 @@ function formatDuration(minutes) {
 
 /**
  * Returns a friendly label for the bestTime enum value.
- *
  * @param {import('../types/result').BestTime} bestTime
  * @returns {string}
  */
@@ -56,8 +53,17 @@ function formatBestTime(bestTime) {
 // Component
 // ---------------------------------------------------------------------------
 
-/** @param {{ stop: import('../types/result').Stop }} props */
-export default function StopCard({ stop }) {
+/**
+ * @param {{
+ *   stop:       import('../types/result').Stop,
+ *   isFirst:    boolean,
+ *   isLast:     boolean,
+ *   onMoveUp:   () => void,
+ *   onMoveDown: () => void,
+ *   onRemove:   () => void,
+ * }} props
+ */
+export default function StopCard({ stop, isFirst, isLast, onMoveUp, onMoveDown, onRemove }) {
   return (
     <article className="stop-card">
       {/* Header: name + type badge */}
@@ -81,6 +87,44 @@ export default function StopCard({ stop }) {
           <span className="stop-meta-icon" aria-hidden="true">🕐</span>
           {formatBestTime(stop.bestTime)}
         </span>
+      </div>
+
+      {/* Action controls — move up / move down / remove */}
+      <div className="stop-actions">
+        <button
+          type="button"
+          className="stop-action-btn"
+          onClick={onMoveUp}
+          disabled={isFirst}
+          aria-label="Move stop up"
+          title="Move up"
+        >
+          ↑
+        </button>
+
+        <button
+          type="button"
+          className="stop-action-btn"
+          onClick={onMoveDown}
+          disabled={isLast}
+          aria-label="Move stop down"
+          title="Move down"
+        >
+          ↓
+        </button>
+
+        {/* Spacer pushes Remove to the right */}
+        <span className="stop-actions-spacer" aria-hidden="true" />
+
+        <button
+          type="button"
+          className="stop-action-btn stop-action-btn--remove"
+          onClick={onRemove}
+          aria-label={`Remove stop: ${stop.name}`}
+          title="Remove stop"
+        >
+          ✕
+        </button>
       </div>
     </article>
   );

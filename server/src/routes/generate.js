@@ -1,13 +1,14 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { GoogleGenAI } = require('@google/genai');
-const { itinerarySchema, buildPrompt } = require('../gemini');
+const { GoogleGenAI } = require("@google/genai");
+const { itinerarySchema, buildPrompt } = require("../gemini");
 
 // ---------------------------------------------------------------------------
 // Gemini client & model configuration
 // ---------------------------------------------------------------------------
 const GEMINI_TIMEOUT_MS = 30_000; // 30 seconds
-const GEMINI_MODEL = 'gemini-3.8-flash';
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
+// 'gemini-3.8-flash';
 
 /**
  * Creates a configured Gemini client.
@@ -15,9 +16,13 @@ const GEMINI_MODEL = 'gemini-3.8-flash';
  */
 function createGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey.trim() === '' || apiKey === 'your_gemini_api_key_here') {
-    const err = new Error('GEMINI_API_KEY is not configured.');
-    err.code = 'LLM_CONFIGURATION_ERROR';
+  if (
+    !apiKey ||
+    apiKey.trim() === "" ||
+    apiKey === "your_gemini_api_key_here"
+  ) {
+    const err = new Error("GEMINI_API_KEY is not configured.");
+    err.code = "LLM_CONFIGURATION_ERROR";
     throw err;
   }
   return new GoogleGenAI({ apiKey });
@@ -26,7 +31,7 @@ function createGeminiClient() {
 // ---------------------------------------------------------------------------
 // POST /generate
 // ---------------------------------------------------------------------------
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   // 1. Input validation
   const { input } = req.body || {};
 
@@ -34,28 +39,28 @@ router.post('/', async (req, res) => {
     return res.status(400).json({
       success: false,
       error: {
-        code: 'INVALID_INPUT',
-        message: 'Trip request must be a non-empty string.',
+        code: "INVALID_INPUT",
+        message: "Trip request must be a non-empty string.",
       },
     });
   }
 
-  if (typeof input !== 'string') {
+  if (typeof input !== "string") {
     return res.status(400).json({
       success: false,
       error: {
-        code: 'INVALID_INPUT',
-        message: 'Trip request must be a non-empty string.',
+        code: "INVALID_INPUT",
+        message: "Trip request must be a non-empty string.",
       },
     });
   }
 
-  if (input.trim() === '') {
+  if (input.trim() === "") {
     return res.status(400).json({
       success: false,
       error: {
-        code: 'INVALID_INPUT',
-        message: 'Trip request must be a non-empty string.',
+        code: "INVALID_INPUT",
+        message: "Trip request must be a non-empty string.",
       },
     });
   }
@@ -65,12 +70,13 @@ router.post('/', async (req, res) => {
   try {
     ai = createGeminiClient();
   } catch (err) {
-    console.error('[generate] LLM configuration error:', err.message);
+    console.error("[generate] LLM configuration error:", err.message);
     return res.status(500).json({
       success: false,
       error: {
-        code: 'LLM_CONFIGURATION_ERROR',
-        message: 'The server is not properly configured to call the AI service.',
+        code: "LLM_CONFIGURATION_ERROR",
+        message:
+          "The server is not properly configured to call the AI service.",
       },
     });
   }
@@ -85,7 +91,7 @@ router.post('/', async (req, res) => {
       model: GEMINI_MODEL,
       contents: prompt,
       config: {
-        responseMimeType: 'application/json',
+        responseMimeType: "application/json",
         responseSchema: itinerarySchema,
         temperature: 0.7,
       },
@@ -93,49 +99,95 @@ router.post('/', async (req, res) => {
 
     const timeout = new Promise((_, reject) => {
       setTimeout(() => {
-        const err = new Error('Gemini request timed out.');
-        err.code = 'LLM_TIMEOUT';
+        const err = new Error("Gemini request timed out.");
+        err.code = "LLM_TIMEOUT";
         reject(err);
       }, GEMINI_TIMEOUT_MS);
     });
 
     response = await Promise.race([geminiCall, timeout]);
   } catch (err) {
-    if (err.code === 'LLM_TIMEOUT') {
-      console.error('[generate] Gemini request timed out after', GEMINI_TIMEOUT_MS, 'ms');
+    if (err.code === "LLM_TIMEOUT") {
+      console.error(
+        "[generate] Gemini request timed out after",
+        GEMINI_TIMEOUT_MS,
+        "ms",
+      );
       return res.status(504).json({
         success: false,
         error: {
-          code: 'LLM_TIMEOUT',
-          message: 'The AI service took too long to respond. Please try again.',
+          code: "LLM_TIMEOUT",
+          message: "The AI service took too long to respond. Please try again.",
         },
       });
     }
 
-    // Treat auth/quota errors specially when detectable
-    const message = err.message || '';
+    const message = err.message || "";
+    const errStatus =
+      err.status ||
+      err.statusCode ||
+      err.code ||
+      err.error?.code ||
+      err.response?.status;
+    const lowerMessage = (
+      message +
+      " " +
+      (typeof err.toString === "function" ? err.toString() : "")
+    ).toLowerCase();
+
+    // Check for auth/configuration errors
     if (
-      message.toLowerCase().includes('api key') ||
-      message.toLowerCase().includes('authentication') ||
-      message.toLowerCase().includes('permission') ||
-      message.toLowerCase().includes('403')
+      errStatus === 401 ||
+      errStatus === 403 ||
+      lowerMessage.includes("api key") ||
+      lowerMessage.includes("api_key") ||
+      lowerMessage.includes("apikey") ||
+      lowerMessage.includes("authentication") ||
+      lowerMessage.includes("unauthenticated") ||
+      lowerMessage.includes("permission") ||
+      lowerMessage.includes("401") ||
+      lowerMessage.includes("403")
     ) {
-      console.error('[generate] Gemini auth/config error:', message);
+      console.error("[generate] Gemini auth/config error:", message);
       return res.status(500).json({
         success: false,
         error: {
-          code: 'LLM_CONFIGURATION_ERROR',
-          message: 'The server is not properly configured to call the AI service.',
+          code: "LLM_CONFIGURATION_ERROR",
+          message:
+            "The server is not properly configured to call the AI service.",
         },
       });
     }
 
-    console.error('[generate] Gemini API error:', message);
+    // Check for temporary upstream availability / overload errors (503 / UNAVAILABLE)
+    if (
+      errStatus === 503 ||
+      errStatus === "503" ||
+      errStatus === "UNAVAILABLE" ||
+      err.error?.status === "UNAVAILABLE" ||
+      lowerMessage.includes("503") ||
+      lowerMessage.includes("unavailable") ||
+      lowerMessage.includes("high demand") ||
+      lowerMessage.includes("overloaded") ||
+      lowerMessage.includes("spikes in demand") ||
+      lowerMessage.includes("temporarily unavailable")
+    ) {
+      console.error("[generate] Gemini temporary availability error:", message);
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "LLM_UNAVAILABLE",
+          message: "The AI model is temporarily unavailable.",
+        },
+      });
+    }
+
+    console.error("[generate] Gemini API error:", message);
     return res.status(502).json({
       success: false,
       error: {
-        code: 'LLM_REQUEST_FAILED',
-        message: 'Failed to reach the AI service. Please try again.',
+        code: "LLM_REQUEST_FAILED",
+        message: "Failed to reach the AI service. Please try again.",
       },
     });
   }
@@ -144,30 +196,38 @@ router.post('/', async (req, res) => {
   let itinerary;
   try {
     const text = response?.text;
-    if (!text || text.trim() === '') {
-      throw new Error('Empty response text from Gemini.');
+    if (!text || text.trim() === "") {
+      throw new Error("Empty response text from Gemini.");
     }
     // The SDK returns the JSON as a string even with responseSchema — parse it.
     itinerary = JSON.parse(text);
   } catch (err) {
-    console.error('[generate] Could not extract itinerary from Gemini response:', err.message);
+    console.error(
+      "[generate] Could not extract itinerary from Gemini response:",
+      err.message,
+    );
     return res.status(500).json({
       success: false,
       error: {
-        code: 'EMPTY_LLM_RESPONSE',
-        message: 'The AI service returned an unusable response. Please try again.',
+        code: "EMPTY_LLM_RESPONSE",
+        message:
+          "The AI service returned an unusable response. Please try again.",
       },
     });
   }
 
   // 5. Sanity-check: ensure the essential top-level fields are present
   if (!itinerary.trip || !Array.isArray(itinerary.days)) {
-    console.error('[generate] Itinerary is missing required fields:', JSON.stringify(itinerary).slice(0, 200));
+    console.error(
+      "[generate] Itinerary is missing required fields:",
+      JSON.stringify(itinerary).slice(0, 200),
+    );
     return res.status(500).json({
       success: false,
       error: {
-        code: 'EMPTY_LLM_RESPONSE',
-        message: 'The AI service returned an incomplete itinerary. Please try again.',
+        code: "EMPTY_LLM_RESPONSE",
+        message:
+          "The AI service returned an incomplete itinerary. Please try again.",
       },
     });
   }

@@ -5,15 +5,22 @@ import StopCard from './StopCard';
  * DayCard.jsx — Renders one day of the trip itinerary.
  *
  * Props:
- *   day {import('../types/result').Day} — Day data from the backend
+ *   day          {import('../types/result').Day} — Day data from the backend
+ *   onRemoveStop {(stopId: string) => void}      — Remove a stop by ID
+ *   onMoveStop   {(stopId: string, direction: 'up'|'down') => void} — Reorder
  *
  * Local state:
- *   expanded {boolean} — Whether the day body is visible.
- *   UI-only state kept local; does NOT need to live in App.
+ *   expanded {boolean} — UI-only expand/collapse; never stored in itinerary data.
  */
 
-/** @param {{ day: import('../types/result').Day }} props */
-export default function DayCard({ day }) {
+/**
+ * @param {{
+ *   day: import('../types/result').Day,
+ *   onRemoveStop: (stopId: string) => void,
+ *   onMoveStop: (stopId: string, direction: 'up'|'down') => void,
+ * }} props
+ */
+export default function DayCard({ day, onRemoveStop, onMoveStop }) {
   // Expand by default so the user immediately sees content
   const [expanded, setExpanded] = useState(true);
 
@@ -21,13 +28,14 @@ export default function DayCard({ day }) {
     setExpanded((prev) => !prev);
   }
 
-  const stopCount = day.stops?.length ?? 0;
+  const stops = day.stops ?? [];
+  const stopCount = stops.length;
 
   return (
     <section className="day-card">
       {/*
-       * Header — acts as the expand/collapse control.
-       * Using a <button> (not a <div>) for keyboard accessibility.
+       * Header — expand/collapse control.
+       * <button> (not <div>) for keyboard accessibility.
        */}
       <button
         type="button"
@@ -42,9 +50,7 @@ export default function DayCard({ day }) {
             {day.dayNumber}
           </div>
           <div className="day-title-wrap">
-            <div className="day-title">
-              {day.title}
-            </div>
+            <div className="day-title">{day.title}</div>
             <div className="day-stop-count">
               {stopCount} {stopCount === 1 ? 'stop' : 'stops'}
             </div>
@@ -73,13 +79,21 @@ export default function DayCard({ day }) {
           )}
 
           {stopCount > 0 ? (
-            day.stops.map((stop) => (
-              // Stable key from backend — never use array index here
-              <StopCard key={stop.id} stop={stop} />
+            stops.map((stop, index) => (
+              // Stable key from backend id — never use array index
+              <StopCard
+                key={stop.id}
+                stop={stop}
+                isFirst={index === 0}
+                isLast={index === stopCount - 1}
+                onMoveUp={() => onMoveStop(stop.id, 'up')}
+                onMoveDown={() => onMoveStop(stop.id, 'down')}
+                onRemove={() => onRemoveStop(stop.id)}
+              />
             ))
           ) : (
-            <p className="day-summary" style={{ fontStyle: 'italic' }}>
-              No stops for this day.
+            <p className="day-empty-notice">
+              No stops planned for this day.
             </p>
           )}
         </div>

@@ -12,7 +12,7 @@
 export default function PromptInput({ value, onChange, onSubmit, loading }) {
   /** Handle textarea keyboard shortcut: Ctrl/Cmd + Enter to submit */
   function handleKeyDown(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
       if (!loading && value.trim()) onSubmit();
     }
@@ -47,15 +47,15 @@ export default function PromptInput({ value, onChange, onSubmit, loading }) {
 
       <div className="prompt-footer">
         <p id="prompt-hint" className="prompt-hint">
-          Tip: mention destination, duration, interests, budget, or any preferences.
-          &nbsp;&nbsp;·&nbsp;&nbsp;
+          Tip: mention destination, duration, interests, budget, or any
+          preferences. &nbsp;&nbsp;·&nbsp;&nbsp;
           <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to generate
         </p>
 
         <button
           id="generate-btn"
           type="submit"
-          className="btn btn-primary"
+          className="btn btn-primary" 
           disabled={loading || !value.trim()}
           aria-busy={loading}
         >

@@ -10,7 +10,8 @@
 }
 
 /* --- Design Tokens ---------------------------------------- */
-:root {
+:root,
+[data-theme="dark"] {
   /* Color palette — dark, premium */
   --color-bg:           #0d1117;
   --color-surface:      #161b22;
@@ -39,12 +40,17 @@
   /* Text */
   --color-text-primary:   #e6edf3;
   --color-text-secondary: #8b949e;
-  --color-text-muted:     #484f58;
+  --color-text-muted:     #6e7781;
 
   /* Status */
   --color-success: #3fb950;
   --color-error:   #f85149;
   --color-warning: #d29922;
+
+  /* Header & overlay */
+  --header-bg: rgba(13, 17, 23, 0.85);
+  --error-bg:  rgba(248, 81, 73, 0.06);
+  --error-border: rgba(248, 81, 73, 0.2);
 
   /* Spacing scale */
   --sp-1:  4px;
@@ -91,6 +97,53 @@
   --max-width: 860px;
 }
 
+[data-theme="light"] {
+  /* Color palette — light, clean and pleasant */
+  --color-bg:           #f6f8fa;
+  --color-surface:      #ffffff;
+  --color-surface-alt:  #f0f3f6;
+  --color-border:       #d0d7de;
+  --color-border-light: #e1e4e8;
+
+  /* Accent */
+  --color-accent:       #0969da;
+  --color-accent-hover: #0550ae;
+  --color-accent-muted: rgba(9, 105, 218, 0.1);
+  --color-accent-glow:  rgba(9, 105, 218, 0.18);
+
+  /* Gradient */
+  --gradient-brand: linear-gradient(135deg, #0969da 0%, #8250df 100%);
+
+  /* Stop-type accent colours */
+  --color-type-sightseeing: #cf222e;
+  --color-type-food:        #bc4c00;
+  --color-type-culture:     #8250df;
+  --color-type-shopping:    #bf3989;
+  --color-type-nature:      #1a7f37;
+  --color-type-relaxation:  #0969da;
+  --color-type-activity:    #9a6700;
+
+  /* Text */
+  --color-text-primary:   #1f2328;
+  --color-text-secondary: #57606a;
+  --color-text-muted:     #656d76;
+
+  /* Status */
+  --color-success: #1a7f37;
+  --color-error:   #cf222e;
+  --color-warning: #9a6700;
+
+  /* Header & overlay */
+  --header-bg: rgba(255, 255, 255, 0.88);
+  --error-bg:  rgba(207, 34, 46, 0.06);
+  --error-border: rgba(207, 34, 46, 0.2);
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(31, 35, 40, 0.12);
+  --shadow-md:  0 4px 16px rgba(31, 35, 40, 0.15);
+  --shadow-lg:  0 8px 32px rgba(31, 35, 40, 0.2);
+}
+
 /* --- Base ------------------------------------------------- */
 html {
   font-size: var(--font-size-base);
@@ -105,6 +158,8 @@ body {
   color: var(--color-text-primary);
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 #root {
@@ -122,26 +177,44 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
 
+/* --- Focus visible outline for accessibility ------------- */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 /* --- Layout Shell ----------------------------------------- */
 .app-shell {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 .app-header {
   border-bottom: 1px solid var(--color-border-light);
-  background: rgba(13, 17, 23, 0.85);
+  background: var(--header-bg);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 100;
   padding: var(--sp-4) var(--sp-6);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .app-header-inner {
   max-width: var(--max-width);
   margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.app-header-brand {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
@@ -159,6 +232,33 @@ body {
 
 .app-logo-icon {
   font-size: var(--font-size-xl);
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  font-family: var(--font-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.theme-toggle-btn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.theme-toggle-icon {
+  font-size: 14px;
 }
 
 .app-main {
@@ -400,6 +500,7 @@ body {
   color: var(--color-text-secondary);
   max-width: 400px;
   line-height: 1.7;
+  white-space: pre-line;
 }
 
 /* --- Result View ------------------------------------------ */
@@ -442,6 +543,8 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .trip-meta {
@@ -468,6 +571,8 @@ body {
   color: var(--color-text-secondary);
   line-height: 1.75;
   font-size: var(--font-size-base);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Days section */
@@ -513,6 +618,7 @@ body {
   width: 100%;
   text-align: left;
   color: inherit;
+  font-family: inherit;
   transition: background var(--transition-fast);
 }
 
@@ -525,6 +631,7 @@ body {
   align-items: center;
   gap: var(--sp-4);
   min-width: 0;
+  flex: 1;
 }
 
 .day-number-badge {
@@ -544,15 +651,16 @@ body {
 
 .day-title-wrap {
   min-width: 0;
+  flex: 1;
 }
 
 .day-title {
   font-size: var(--font-size-md);
   font-weight: 600;
   color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .day-stop-count {
@@ -637,6 +745,8 @@ body {
   font-weight: 600;
   color: var(--color-text-primary);
   line-height: 1.4;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .stop-type-badge {
@@ -662,6 +772,8 @@ body {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   line-height: 1.65;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .stop-meta {
@@ -717,3 +829,81 @@ body {
     justify-content: center;
   }
 }
+
+/* ============================================================
+   PART 2 — Stop interaction controls
+   ============================================================ */
+
+/* Stop actions row — sits below stop-meta */
+.stop-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--color-border-light);
+  margin-top: var(--sp-1);
+}
+
+/* Icon button base — move-up / move-down / remove */
+.stop-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: color var(--transition-fast),
+              border-color var(--transition-fast),
+              background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.stop-action-btn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
+  background: var(--color-surface);
+}
+
+.stop-action-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+/* Remove button — red accent on hover */
+.stop-action-btn--remove:hover:not(:disabled) {
+  color: var(--color-error);
+  border-color: var(--color-error);
+  background: rgba(248, 81, 73, 0.08);
+}
+
+/* Spacer — pushes remove to the right */
+.stop-actions-spacer {
+  flex: 1;
+}
+
+/* Empty day after all stops removed */
+.day-empty-notice {
+  padding: var(--sp-5) var(--sp-4);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+  border: 1px dashed var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+/* Mobile: make action buttons slightly larger for touch targets */
+@media (max-width: 640px) {
+  .stop-action-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+  }
+}
+

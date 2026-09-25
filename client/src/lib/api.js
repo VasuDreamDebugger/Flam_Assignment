@@ -16,7 +16,7 @@
 // Falls back to the Vite proxy path (/api) so local development works
 // without changing the env file when using `npm run dev`.
 // ---------------------------------------------------------------------------
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
+const BASE_URL = import.meta.env?.VITE_API_BASE_URL ?? '';
 
 /**
  * A controlled error thrown by api.js so callers can distinguish API
@@ -57,7 +57,7 @@ export async function generateItinerary(input) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ input }),
     });
-  } catch (networkError) {
+  } catch {
     // fetch() itself threw — network is unreachable or CORS preflight failed
     throw new ApiError(
       'Unable to reach the server. Please check your connection and try again.',
@@ -97,3 +97,84 @@ export async function generateItinerary(input) {
 
   return body.data;
 }
+
+/**
+ * Maps an error or ApiError code into user-facing title and message.
+ * Ensures no raw error objects, undefined, null, or [object Object] are shown.
+ *
+ * @param {unknown} err
+ * @returns {{ title: string, message: string }}
+ */
+export function getUserFriendlyError(err) {
+  const code =
+    typeof err === 'object' && err !== null && typeof err.code === 'string'
+      ? err.code
+      : 'UNKNOWN_ERROR';
+
+  switch (code) {
+    case 'LLM_UNAVAILABLE':
+      return {
+        title: 'The AI model is experiencing high traffic',
+        message:
+          'Gemini is temporarily unavailable due to high demand.\nPlease try again in a moment.',
+      };
+
+    case 'INVALID_INPUT':
+      return {
+        title: 'Something went wrong',
+        message: 'Please enter a trip description before generating an itinerary.',
+      };
+
+    case 'LLM_REQUEST_FAILED':
+      return {
+        title: 'Something went wrong',
+        message: "We couldn't generate your itinerary right now.\nPlease try again.",
+      };
+
+    case 'LLM_CONFIGURATION_ERROR':
+      return {
+        title: 'Something went wrong',
+        message: 'The AI service is not configured correctly.\nPlease try again later.',
+      };
+
+    case 'EMPTY_LLM_RESPONSE':
+    case 'EMPTY_RESPONSE':
+      return {
+        title: 'Something went wrong',
+        message: 'The AI returned an empty response.\nPlease try again.',
+      };
+
+    case 'INTERNAL_SERVER_ERROR':
+      return {
+        title: 'Something went wrong',
+        message: 'Something went wrong on our server.\nPlease try again.',
+      };
+
+    case 'LLM_TIMEOUT':
+      return {
+        title: 'Something went wrong',
+        message: 'The AI service took too long to respond.\nPlease try again.',
+      };
+
+    case 'NETWORK_ERROR':
+      return {
+        title: 'Something went wrong',
+        message: 'Unable to reach the server. Please check your connection and try again.',
+      };
+
+    case 'INVALID_ITINERARY_STRUCTURE':
+    case 'VALIDATION_ERROR':
+      return {
+        title: 'We received an invalid itinerary',
+        message:
+          "The AI returned data that doesn't match the itinerary requirements.\nPlease try generating the trip again.",
+      };
+
+    default:
+      return {
+        title: 'Something went wrong',
+        message: "We couldn't generate your itinerary.\nPlease try again.",
+      };
+  }
+}
+

@@ -4,16 +4,22 @@ import DayCard from './DayCard';
  * ResultView.jsx — Renders the full trip itinerary.
  *
  * Props:
- *   itinerary {import('../types/result').TripData} — Validated trip data
+ *   itinerary    {import('../types/result').TripData}
+ *   onRemoveStop {(dayNumber: number, stopId: string) => void}
+ *   onMoveStop   {(dayNumber: number, stopId: string, direction: 'up'|'down') => void}
  *
- * Responsibilities:
- *   - Display trip-level metadata (destination, duration, summary)
- *   - Render each DayCard in order
- *   - Does NOT own itinerary state — it is passed down from App
+ * Purely presentational — owns no state.
+ * Threads callbacks from App down to DayCard.
  */
 
-/** @param {{ itinerary: import('../types/result').TripData }} props */
-export default function ResultView({ itinerary }) {
+/**
+ * @param {{
+ *   itinerary:    import('../types/result').TripData,
+ *   onRemoveStop: (dayNumber: number, stopId: string) => void,
+ *   onMoveStop:   (dayNumber: number, stopId: string, direction: 'up'|'down') => void,
+ * }} props
+ */
+export default function ResultView({ itinerary, onRemoveStop, onMoveStop }) {
   const { trip, days } = itinerary;
 
   return (
@@ -49,8 +55,13 @@ export default function ResultView({ itinerary }) {
           <p className="days-section-label">Day-by-day itinerary</p>
           <div className="days-list" style={{ marginTop: '16px' }}>
             {days.map((day) => (
-              // Stable key: dayNumber is sequential and unique per trip
-              <DayCard key={day.dayNumber} day={day} />
+              // Stable key — dayNumber is sequential and unique per trip
+              <DayCard
+                key={day.dayNumber}
+                day={day}
+                onRemoveStop={(stopId) => onRemoveStop(day.dayNumber, stopId)}
+                onMoveStop={(stopId, direction) => onMoveStop(day.dayNumber, stopId, direction)}
+              />
             ))}
           </div>
         </div>
