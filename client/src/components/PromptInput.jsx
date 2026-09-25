@@ -14,13 +14,13 @@ export default function PromptInput({ value, onChange, onSubmit, loading }) {
   function handleKeyDown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
-      if (!loading && value.trim()) onSubmit();
+      if (value.trim()) onSubmit();
     }
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!loading && value.trim()) onSubmit();
+    if (value.trim()) onSubmit();
   }
 
   return (
@@ -55,7 +55,7 @@ export default function PromptInput({ value, onChange, onSubmit, loading }) {
         <button
           id="generate-btn"
           type="submit"
-          className="btn btn-primary" 
+          className="btn btn-primary"
           disabled={loading || !value.trim()}
           aria-busy={loading}
         >

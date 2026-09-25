@@ -3,16 +3,12 @@
  *
  * Props:
  *   stop        {import('../types/result').Stop} — Stop data from the backend
+ *   index       {number}    — Zero-based index of this stop within the day
  *   isFirst     {boolean}   — True if this is the first stop in the day
  *   isLast      {boolean}   — True if this is the last stop in the day
  *   onMoveUp    {() => void} — Move this stop one position earlier
  *   onMoveDown  {() => void} — Move this stop one position later
  *   onRemove    {() => void} — Remove this stop from the day
- *
- * Responsibilities:
- *   - Display name, type badge, description, duration, best time
- *   - Convert durationMinutes to a human-readable string (does NOT mutate stored value)
- *   - Render ↑ / ↓ / Remove action buttons
  */
 
 // ---------------------------------------------------------------------------
@@ -56,6 +52,7 @@ function formatBestTime(bestTime) {
 /**
  * @param {{
  *   stop:       import('../types/result').Stop,
+ *   index:      number,
  *   isFirst:    boolean,
  *   isLast:     boolean,
  *   onMoveUp:   () => void,
@@ -63,69 +60,78 @@ function formatBestTime(bestTime) {
  *   onRemove:   () => void,
  * }} props
  */
-export default function StopCard({ stop, isFirst, isLast, onMoveUp, onMoveDown, onRemove }) {
+export default function StopCard({ stop, index = 0, isFirst, isLast, onMoveUp, onMoveDown, onRemove }) {
+  const formattedStopNum = String(index + 1).padStart(2, '0');
+
   return (
     <article className="stop-card">
-      {/* Header: name + type badge */}
-      <div className="stop-header">
-        <h4 className="stop-name">{stop.name}</h4>
-        <span className={`stop-type-badge stop-type--${stop.type}`}>
-          {stop.type}
-        </span>
-      </div>
+      <div className="stop-card-inner">
+        {/* Left sequential index */}
+        <div className="stop-number-col" aria-hidden="true">
+          <span className="stop-index">{formattedStopNum}</span>
+        </div>
 
-      {/* Description */}
-      <p className="stop-description">{stop.description}</p>
+        {/* Center content */}
+        <div className="stop-content-col">
+          <div className="stop-headline">
+            <h5 className="stop-name">{stop.name}</h5>
+            <span className={`stop-type-badge stop-type--${stop.type}`}>
+              {stop.type}
+            </span>
+          </div>
 
-      {/* Meta row: duration + best time */}
-      <div className="stop-meta">
-        <span className="stop-meta-item">
-          <span className="stop-meta-icon" aria-hidden="true">⏱</span>
-          {formatDuration(stop.durationMinutes)}
-        </span>
-        <span className="stop-meta-item">
-          <span className="stop-meta-icon" aria-hidden="true">🕐</span>
-          {formatBestTime(stop.bestTime)}
-        </span>
-      </div>
+          <p className="stop-description">{stop.description}</p>
 
-      {/* Action controls — move up / move down / remove */}
-      <div className="stop-actions">
-        <button
-          type="button"
-          className="stop-action-btn"
-          onClick={onMoveUp}
-          disabled={isFirst}
-          aria-label="Move stop up"
-          title="Move up"
-        >
-          ↑
-        </button>
+          <div className="stop-meta-row">
+            <span className="stop-meta-item">
+              <span className="stop-meta-icon" aria-hidden="true">⏱</span>
+              {formatDuration(stop.durationMinutes)}
+            </span>
+            <span className="stop-meta-divider" aria-hidden="true">•</span>
+            <span className="stop-meta-item">
+              <span className="stop-meta-icon" aria-hidden="true">🕐</span>
+              {formatBestTime(stop.bestTime)}
+            </span>
+          </div>
+        </div>
 
-        <button
-          type="button"
-          className="stop-action-btn"
-          onClick={onMoveDown}
-          disabled={isLast}
-          aria-label="Move stop down"
-          title="Move down"
-        >
-          ↓
-        </button>
+        {/* Right actions */}
+        <div className="stop-actions-col">
+          <div className="stop-reorder-group" role="group" aria-label="Reorder stop">
+            <button
+              type="button"
+              className="stop-action-btn"
+              onClick={onMoveUp}
+              disabled={isFirst}
+              aria-label="Move stop up"
+              title="Move up"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              className="stop-action-btn"
+              onClick={onMoveDown}
+              disabled={isLast}
+              aria-label="Move stop down"
+              title="Move down"
+            >
+              ↓
+            </button>
+          </div>
 
-        {/* Spacer pushes Remove to the right */}
-        <span className="stop-actions-spacer" aria-hidden="true" />
-
-        <button
-          type="button"
-          className="stop-action-btn stop-action-btn--remove"
-          onClick={onRemove}
-          aria-label={`Remove stop: ${stop.name}`}
-          title="Remove stop"
-        >
-          ✕
-        </button>
+          <button
+            type="button"
+            className="stop-action-btn stop-action-btn--remove"
+            onClick={onRemove}
+            aria-label={`Remove stop: ${stop.name}`}
+            title="Remove stop"
+          >
+            ✕
+          </button>
+        </div>
       </div>
     </article>
   );
 }
+

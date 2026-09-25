@@ -25,22 +25,27 @@ export default function ResultView({ itinerary, onRemoveStop, onMoveStop }) {
   return (
     <section className="result-view" aria-label="Trip itinerary">
 
-      {/* Trip-level header */}
-      <header className="trip-header">
-        <h2 className="trip-destination">{trip.destination}</h2>
+      {/* Trip overview / Editorial hero */}
+      <header className="trip-overview">
+        <div className="trip-overview-top">
+          <span className="trip-overview-label">TRIP OVERVIEW</span>
+          <h2 className="trip-destination">{trip.destination}</h2>
+        </div>
 
-        <div className="trip-meta">
-          <span className="trip-meta-badge">
-            <span aria-hidden="true">📅</span>
-            {trip.durationDays} {trip.durationDays === 1 ? 'day' : 'days'}
+        <div className="trip-meta-bar">
+          <span className="trip-meta-item">
+            <span className="trip-meta-icon" aria-hidden="true">📅</span>
+            {trip.durationDays} {trip.durationDays === 1 ? 'DAY' : 'DAYS'}
           </span>
-          <span className="trip-meta-badge">
-            <span aria-hidden="true">📍</span>
-            {trip.destination}
+          <span className="trip-meta-separator" aria-hidden="true">•</span>
+          <span className="trip-meta-item">
+            <span className="trip-meta-icon" aria-hidden="true">📍</span>
+            {trip.destination.toUpperCase()}
           </span>
-          <span className="trip-meta-badge">
-            <span aria-hidden="true">🗺</span>
-            {days.length} {days.length === 1 ? 'day planned' : 'days planned'}
+          <span className="trip-meta-separator" aria-hidden="true">•</span>
+          <span className="trip-meta-item">
+            <span className="trip-meta-icon" aria-hidden="true">🗺</span>
+            {days.length} {days.length === 1 ? 'DAY PLANNED' : 'DAYS PLANNED'}
           </span>
         </div>
 
@@ -49,11 +54,15 @@ export default function ResultView({ itinerary, onRemoveStop, onMoveStop }) {
         )}
       </header>
 
-      {/* Days list */}
-      {days.length > 0 ? (
-        <div>
-          <p className="days-section-label">Day-by-day itinerary</p>
-          <div className="days-list" style={{ marginTop: '16px' }}>
+      {/* Itinerary section */}
+      <div className="itinerary-section">
+        <div className="itinerary-section-header">
+          <span className="itinerary-section-tag">ITINERARY</span>
+          <h3 className="itinerary-section-title">Day-by-day plan</h3>
+        </div>
+
+        {days.length > 0 ? (
+          <div className="days-list">
             {days.map((day) => (
               // Stable key — dayNumber is sequential and unique per trip
               <DayCard
@@ -64,12 +73,13 @@ export default function ResultView({ itinerary, onRemoveStop, onMoveStop }) {
               />
             ))}
           </div>
-        </div>
-      ) : (
-        <p style={{ color: 'var(--color-text-secondary)', textAlign: 'center' }}>
-          No days were generated for this trip.
-        </p>
-      )}
+        ) : (
+          <p className="no-days-notice">
+            No days were generated for this trip.
+          </p>
+        )}
+      </div>
     </section>
   );
 }
+
